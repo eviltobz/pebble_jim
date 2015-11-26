@@ -1,0 +1,22 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "very very evil co",
+    "longName": "Jim",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "Jim",
+    "targetPlatforms": [
+        "basalt"
+    ],
+    "uuid": "597061da-b688-4714-9116-a425c6100d11",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
