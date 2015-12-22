@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include "main.h"
 #include "timer.h"
 
 static Window *window;
@@ -53,8 +54,10 @@ static void deinit(void) {
 
 int main(void) {
   //init();
-  show_timer(5);
+  show_main();
+  //show_timer(69);
   app_event_loop();
   //deinit();
-  hide_timer();
+  hide_main();
+  //hide_timer();
 }

@@ -1,2 +1,3 @@
 void show_timer(int duration);
-void hide_timer(void);
+void timer_update_time(char *value);
+//void hide_timer(void);
