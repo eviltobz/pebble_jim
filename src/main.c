@@ -10,6 +10,7 @@ static BitmapLayer *s_menubar;
 static TextLayer *s_start1;
 static TextLayer *s_start2;
 static TextLayer *s_start3;
+static TextLayer *s_set;
 
 static void initialise_ui(void) {
   s_window = window_create();
@@ -56,6 +57,15 @@ static void initialise_ui(void) {
   text_layer_set_text_alignment(s_start3, GTextAlignmentRight);
   text_layer_set_font(s_start3, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_start3);
+  
+  // s_set
+  s_set = text_layer_create(GRect(0, 143, 144, 25));
+  text_layer_set_background_color(s_set, GColorClear);
+  text_layer_set_text_color(s_set, GColorWhite);
+  text_layer_set_text(s_set, "Set: 0");
+  text_layer_set_font(s_set, s_res_roboto_condensed_21);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)s_set);
+  
 }
 
 static void destroy_ui(void) {
@@ -65,6 +75,7 @@ static void destroy_ui(void) {
   text_layer_destroy(s_start1);
   text_layer_destroy(s_start2);
   text_layer_destroy(s_start3);
+  text_layer_destroy(s_set);
 }
 // END AUTO-GENERATED UI CODE
 

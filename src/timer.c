@@ -23,6 +23,7 @@ static BitmapLayer *s_menubar;
 static TextLayer *s_restart1;
 static TextLayer *s_restart2;
 static TextLayer *s_restart3;
+static TextLayer *s_duration;
 
 static void initialise_ui(void) {
   s_window = window_create();
@@ -32,13 +33,6 @@ static void initialise_ui(void) {
   
   s_res_roboto_bold_subset_49 = fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49);
   s_res_roboto_condensed_21 = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
-  // s_countdown
-  s_countdown = text_layer_create(GRect(20, 40, 100, 49));
-  text_layer_set_background_color(s_countdown, GColorClear);
-  text_layer_set_text(s_countdown, "23");
-  text_layer_set_text_alignment(s_countdown, GTextAlignmentCenter);
-  text_layer_set_font(s_countdown, s_res_roboto_bold_subset_49);
-  layer_add_child(window_get_root_layer(s_window), (Layer *)s_countdown);
   
   // s_time
   s_time = text_layer_create(GRect(0, 0, 144, 25));
@@ -47,8 +41,16 @@ static void initialise_ui(void) {
   text_layer_set_font(s_time, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_time);
   
+  // s_countdown
+  s_countdown = text_layer_create(GRect(20, 50, 100, 49));
+  text_layer_set_background_color(s_countdown, GColorClear);
+  text_layer_set_text(s_countdown, "23");
+  text_layer_set_text_alignment(s_countdown, GTextAlignmentCenter);
+  text_layer_set_font(s_countdown, s_res_roboto_bold_subset_49);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)s_countdown);
+  
   // s_countup
-  s_countup = text_layer_create(GRect(20, 90, 100, 23));
+  s_countup = text_layer_create(GRect(20, 100, 100, 23));
   text_layer_set_background_color(s_countup, GColorClear);
   text_layer_set_text(s_countup, "37");
   text_layer_set_text_alignment(s_countup, GTextAlignmentCenter);
@@ -57,7 +59,7 @@ static void initialise_ui(void) {
   
   // s_set
   s_set = text_layer_create(GRect(0, 143, 144, 25));
-  text_layer_set_text(s_set, "Sets: 1");
+  text_layer_set_text(s_set, "Set: 1");
   text_layer_set_font(s_set, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_set);
   
@@ -93,11 +95,17 @@ static void initialise_ui(void) {
   text_layer_set_font(s_restart3, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_restart3);
   
+  // s_duration
+  s_duration = text_layer_create(GRect(20, 35, 100, 23));
+  text_layer_set_background_color(s_duration, GColorClear);
+  text_layer_set_text(s_duration, "12");
+  text_layer_set_text_alignment(s_duration, GTextAlignmentCenter);
+  text_layer_set_font(s_duration, s_res_roboto_condensed_21);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)s_duration);
 }
 
 static void destroy_ui(void) {
   window_destroy(s_window);
-  text_layer_destroy(s_time);
   text_layer_destroy(s_countdown);
   text_layer_destroy(s_countup);
   text_layer_destroy(s_set);
@@ -105,6 +113,7 @@ static void destroy_ui(void) {
   text_layer_destroy(s_restart1);
   text_layer_destroy(s_restart2);
   text_layer_destroy(s_restart3);
+  text_layer_destroy(s_duration);
 }
 // END AUTO-GENERATED UI CODE
 
@@ -119,6 +128,13 @@ static void handle_window_unload(Window* window) {
 }
 
 static void setHiddenRestarts(bool hide) {
+  if(hide) {
+    layer_set_frame((Layer *)s_menubar, GRect(127, 0, 32, 168));
+    text_layer_set_text(s_restart1, "-");
+    text_layer_set_text(s_restart2, "");
+    text_layer_set_text(s_restart3, "+");
+  }
+  return;
   layer_set_hidden((Layer *)s_restart1, hide);
   layer_set_hidden((Layer *)s_restart2, hide);
   layer_set_hidden((Layer *)s_restart3, hide);
@@ -156,27 +172,33 @@ static void updateSets() {
   text_layer_set_text(s_set, bSet);
 }
 
-
-void timerTick(void *data) {
-  s_timer = app_timer_register(500, timerTick, NULL);
-  s_currentTimer++;
+void updateDisplay() {
+  int elapsed = 0;
+  int countdown = 0;
+  elapsed = s_currentTimer/2;
+  countdown = s_selectedDuration - elapsed;
+  
   if(s_currentTimer%2 == 0) {
     static char bUp[4];
     static char bDown[4];
-    static int elapsed = 0;
-    static int countdown = 0;
+    static char bDuration[5];
+    //static int elapsed = 0;
+    //static int countdown = 0;
     
-    elapsed = s_currentTimer/2;
-    countdown = s_selectedDuration - elapsed;
+    //elapsed = s_currentTimer/2;
+    //countdown = s_selectedDuration - elapsed;
     if(countdown > 0) {
       printInt(s_countup, elapsed, bUp);
       printInt(s_countdown, countdown, bDown);
+      printInt(s_duration, s_selectedDuration, bDuration);
     } else {
-      printInt(s_countup, elapsed - s_selectedDuration, bUp);
+      printInt(s_countup, elapsed - s_selectedDuration, bDuration);
+      text_layer_set_text(s_duration, "");
     }
     
-    if(countdown == 10) {
-      window_set_background_color(s_window, GColorRed);
+    if(s_currentTimer == s_selectedDuration) { // halfway point
+      vibes_double_pulse();
+    } else  if(countdown == 10) {
       vibes_double_pulse();
     } else if(countdown == 3) {
       vibes_long_pulse();
@@ -192,15 +214,34 @@ void timerTick(void *data) {
       updateSets();
     }
   }
-  if(s_currentTimer == s_selectedDuration) {
-    window_set_background_color(s_window, GColorOrange);
-    vibes_double_pulse();
+  
+  if(s_timerActive) {
+    if(countdown <= 10) {
+       window_set_background_color(s_window, GColorRed);
+    } else if (s_currentTimer < s_selectedDuration) {
+      window_set_background_color(s_window, GColorGreen);
+    } else {
+      window_set_background_color(s_window, GColorOrange);
+    }
   }
 }
 
+void timerTick(void *data) {
+  s_timer = app_timer_register(500, timerTick, NULL);
+  s_currentTimer++;
+  
+  updateDisplay();
+}
+
 void startTimer(int duration) {
-  if(s_timerActive)
+  if(s_timerActive) {
+    // Nasty hack to tidy up :)
+    if(duration == s_duration1 && s_selectedDuration >=30)
+      s_selectedDuration -= 15;
+    if(duration == s_duration3 && s_selectedDuration <120)
+      s_selectedDuration += 15;
     return;
+  }
   
   s_timerActive = true;
   
@@ -212,16 +253,44 @@ void startTimer(int duration) {
   timerTick(NULL);
 }
 
+typedef enum {TOP, MIDDLE, BOTTOM} buttonType;
+
+void ButtonClick(buttonType button) {
+  if(s_timerActive) {
+    if(button == TOP && s_selectedDuration > 30)
+      s_selectedDuration -= 15;
+    if(button == BOTTOM && s_selectedDuration < 120)
+      s_selectedDuration += 15;
+  } else {
+    switch (button) {
+      case TOP:
+        startTimer(s_duration1);
+        break;
+      
+      case MIDDLE:
+        startTimer(s_duration2);
+        break;
+      
+      case BOTTOM:
+        startTimer(s_duration3);
+        break;
+    }
+  }
+}
+
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  startTimer(s_duration1);
+  //startTimer(s_duration1);
+  ButtonClick(TOP);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  startTimer(s_duration2);
+  //startTimer(s_duration2);
+  ButtonClick(MIDDLE);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  startTimer(s_duration3);
+  //startTimer(s_duration3);
+  ButtonClick(BOTTOM);
 }
 
 static void click_config_provider(void *context) {
