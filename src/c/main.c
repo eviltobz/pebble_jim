@@ -6,6 +6,7 @@
 static Window *s_window;
 static GFont s_res_roboto_condensed_21;
 static TextLayer *s_time;
+static TextLayer *s_time_elapsed;
 static BitmapLayer *s_menubar;
 static TextLayer *s_start1;
 static TextLayer *s_start2;
@@ -29,6 +30,15 @@ static void initialise_ui(void) {
   text_layer_set_font(s_time, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_time);
   
+  // s_time_elapsed
+  s_time_elapsed = text_layer_create(GRect(0, 25, 144, 25));
+  text_layer_set_background_color(s_time_elapsed, GColorBlack);
+  text_layer_set_text_color(s_time_elapsed, GColorWhite);
+  text_layer_set_text(s_time_elapsed, "0:00");
+  text_layer_set_text_alignment(s_time_elapsed, GTextAlignmentCenter);
+  text_layer_set_font(s_time_elapsed, s_res_roboto_condensed_21);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)s_time_elapsed);
+  
   // s_menubar
   s_menubar = bitmap_layer_create(GRect(109, 0, 35, 168));
   bitmap_layer_set_background_color(s_menubar, GColorWhite);
@@ -37,7 +47,7 @@ static void initialise_ui(void) {
   // s_start1
   s_start1 = text_layer_create(GRect(108, 15, 35, 21));
   text_layer_set_background_color(s_start1, GColorClear);
-  text_layer_set_text(s_start1, "45");
+  text_layer_set_text(s_start1, "30");
   text_layer_set_text_alignment(s_start1, GTextAlignmentRight);
   text_layer_set_font(s_start1, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_start1);
@@ -45,7 +55,7 @@ static void initialise_ui(void) {
   // s_start2
   s_start2 = text_layer_create(GRect(108, 70, 35, 21));
   text_layer_set_background_color(s_start2, GColorClear);
-  text_layer_set_text(s_start2, "60");
+  text_layer_set_text(s_start2, "45");
   text_layer_set_text_alignment(s_start2, GTextAlignmentRight);
   text_layer_set_font(s_start2, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_start2);
@@ -53,7 +63,7 @@ static void initialise_ui(void) {
   // s_start3
   s_start3 = text_layer_create(GRect(108, 129, 35, 21));
   text_layer_set_background_color(s_start3, GColorClear);
-  text_layer_set_text(s_start3, "75");
+  text_layer_set_text(s_start3, "60");
   text_layer_set_text_alignment(s_start3, GTextAlignmentRight);
   text_layer_set_font(s_start3, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_start3);
@@ -65,12 +75,12 @@ static void initialise_ui(void) {
   text_layer_set_text(s_set, "Set: 0");
   text_layer_set_font(s_set, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_set);
-  
 }
 
 static void destroy_ui(void) {
   window_destroy(s_window);
   text_layer_destroy(s_time);
+  text_layer_destroy(s_time_elapsed);
   bitmap_layer_destroy(s_menubar);
   text_layer_destroy(s_start1);
   text_layer_destroy(s_start2);
@@ -80,15 +90,15 @@ static void destroy_ui(void) {
 // END AUTO-GENERATED UI CODE
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  show_timer(45);
+  show_timer(30);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  show_timer(60);
+  show_timer(45);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  show_timer(75);
+  show_timer(60);
 }
 
 static void click_config_provider(void *context) {
@@ -102,6 +112,7 @@ static void handle_window_unload(Window* window) {
   destroy_ui();
 }
 
+static int s_uptime = 0;
 static void tickhandler(struct tm *tick_time, TimeUnits units_changed) {
   static char timeDisplay[10];
   clock_copy_time_string(timeDisplay, 10);
@@ -109,14 +120,26 @@ static void tickhandler(struct tm *tick_time, TimeUnits units_changed) {
   int index = strlen(timeDisplay);
   timeDisplay[index - 2] = 0;
   text_layer_set_text(s_time, timeDisplay);
-  timer_update_time(timeDisplay);
+  //timer_update_time(timeDisplay);
+  
+  static char timeElapsed[10];
+  int seconds = s_uptime % 60;
+  int minutes = (s_uptime % 3600) / 60;
+  int hours = s_uptime / 3600;
+  //strftime(timeElapsed, sizeof(timeElapsed), "%H:%M:%S", tick_time);
+  snprintf(timeElapsed, sizeof(timeElapsed), "%d:%02d", hours, minutes); //, seconds);
+  text_layer_set_text(s_time_elapsed, timeElapsed);
+  
+  timer_update_time(timeDisplay, timeElapsed);
+  s_uptime++;
 }
 
 void show_main(void) {
   initialise_ui();
   
   window_set_click_config_provider(s_window, click_config_provider);
-  tick_timer_service_subscribe(MINUTE_UNIT, tickhandler);
+  //tick_timer_service_subscribe(MINUTE_UNIT, tickhandler);
+  tick_timer_service_subscribe(SECOND_UNIT, tickhandler);
   
   window_set_window_handlers(s_window, (WindowHandlers) {
     .unload = handle_window_unload,

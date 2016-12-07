@@ -11,11 +11,12 @@ static int s_setCount = 0;
 static AppTimer *s_timer;
 static bool s_timerActive = false;
 
-// BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY
+// BEGIN AUTO-GENERATED UI CODE; DO NOT MODIFY -- no, do not load into UI, cos that'll break my hacks!
 static Window *s_window;
 static GFont s_res_roboto_bold_subset_49;
 static GFont s_res_roboto_condensed_21;
 static TextLayer *s_time = NULL;
+static TextLayer *s_time_elapsed = NULL;
 static TextLayer *s_countdown;
 static TextLayer *s_countup;
 static TextLayer *s_set;
@@ -23,7 +24,7 @@ static BitmapLayer *s_menubar;
 static TextLayer *s_restart1;
 static TextLayer *s_restart2;
 static TextLayer *s_restart3;
-static TextLayer *s_duration;
+//static TextLayer *s_duration;
 
 static void initialise_ui(void) {
   s_window = window_create();
@@ -41,6 +42,15 @@ static void initialise_ui(void) {
   text_layer_set_font(s_time, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_time);
   
+  // s_time_elapsed
+  s_time_elapsed = text_layer_create(GRect(0, 25, 144, 25));
+  text_layer_set_background_color(s_time_elapsed, GColorClear);
+  text_layer_set_text_color(s_time_elapsed, GColorBlack);
+  text_layer_set_text(s_time_elapsed, "00:00:00");
+  text_layer_set_text_alignment(s_time_elapsed, GTextAlignmentCenter);
+  text_layer_set_font(s_time_elapsed, s_res_roboto_condensed_21);
+  layer_add_child(window_get_root_layer(s_window), (Layer *)s_time_elapsed);
+  
   // s_countdown
   s_countdown = text_layer_create(GRect(20, 50, 100, 49));
   text_layer_set_background_color(s_countdown, GColorClear);
@@ -50,7 +60,7 @@ static void initialise_ui(void) {
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_countdown);
   
   // s_countup
-  s_countup = text_layer_create(GRect(20, 100, 100, 23));
+  s_countup = text_layer_create(GRect(20, 108, 100, 23));
   text_layer_set_background_color(s_countup, GColorClear);
   text_layer_set_text(s_countup, "37");
   text_layer_set_text_alignment(s_countup, GTextAlignmentCenter);
@@ -95,13 +105,15 @@ static void initialise_ui(void) {
   text_layer_set_font(s_restart3, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_restart3);
   
+  /*
   // s_duration
-  s_duration = text_layer_create(GRect(20, 35, 100, 23));
+  s_duration = text_layer_create(GRect(20, 43, 100, 23));
   text_layer_set_background_color(s_duration, GColorClear);
   text_layer_set_text(s_duration, "12");
   text_layer_set_text_alignment(s_duration, GTextAlignmentCenter);
   text_layer_set_font(s_duration, s_res_roboto_condensed_21);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_duration);
+  */
 }
 
 static void destroy_ui(void) {
@@ -113,7 +125,11 @@ static void destroy_ui(void) {
   text_layer_destroy(s_restart1);
   text_layer_destroy(s_restart2);
   text_layer_destroy(s_restart3);
-  text_layer_destroy(s_duration);
+//  text_layer_destroy(s_duration);
+  
+  
+  text_layer_destroy(s_time);
+  text_layer_destroy(s_time_elapsed);
 }
 // END AUTO-GENERATED UI CODE
 
@@ -179,26 +195,28 @@ void updateDisplay() {
   countdown = s_selectedDuration - elapsed;
   
   if(s_currentTimer%2 == 0) {
-    static char bUp[4];
+    static char bUp[10];
     static char bDown[4];
-    static char bDuration[5];
+    //static char bDuration[10];
+    //static char bDuration[5];
     //static int elapsed = 0;
     //static int countdown = 0;
     
     //elapsed = s_currentTimer/2;
     //countdown = s_selectedDuration - elapsed;
     if(countdown > 0) {
-      printInt(s_countup, elapsed, bUp);
+      //printInt(s_countup, elapsed, bUp);
       printInt(s_countdown, countdown, bDown);
-      printInt(s_duration, s_selectedDuration, bDuration);
+      //printInt(s_duration, s_selectedDuration, bDuration);
+      
+      snprintf(bUp, 10, "%d / %d", elapsed, s_selectedDuration);
+      text_layer_set_text(s_countup, bUp);
     } else {
-      printInt(s_countup, elapsed - s_selectedDuration, bDuration);
-      text_layer_set_text(s_duration, "");
+      printInt(s_countup, elapsed - s_selectedDuration, bUp);
+      //text_layer_set_text(s_duration, "");
     }
     
-    if(s_currentTimer == s_selectedDuration) { // halfway point
-      vibes_double_pulse();
-    } else  if(countdown == 10) {
+     if(countdown == 10) {
       vibes_double_pulse();
     } else if(countdown == 3) {
       vibes_long_pulse();
@@ -222,6 +240,9 @@ void updateDisplay() {
       window_set_background_color(s_window, GColorGreen);
     } else {
       window_set_background_color(s_window, GColorOrange);
+      if(s_currentTimer == s_selectedDuration) { // halfway point
+        vibes_double_pulse();
+      } 
     }
   }
 }
@@ -300,11 +321,15 @@ static void click_config_provider(void *context) {
 }
 
 static char *s_timeBuf;
-void timer_update_time(char *value) {
-  if(s_time == NULL)
-    s_timeBuf = value;
-  else
-    text_layer_set_text(s_time, value);
+static char *s_elapsedBuf;
+void timer_update_time(char *currentTime, char *elapsedTime) {
+  if(s_time == NULL) {
+    s_timeBuf = currentTime;
+    s_elapsedBuf = elapsedTime;
+  } else {
+    text_layer_set_text(s_time, currentTime);
+    text_layer_set_text(s_time_elapsed, elapsedTime);
+  }
 }
 
 void show_timer(int duration) {
@@ -315,7 +340,7 @@ void show_timer(int duration) {
   });
   window_stack_push(s_window, true);
   
-  timer_update_time(s_timeBuf);
+  timer_update_time(s_timeBuf, s_elapsedBuf);
   s_setCount = 0;
   updateSets();
   startTimer(duration);
